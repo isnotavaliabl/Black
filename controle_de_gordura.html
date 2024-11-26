@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Gordura</title>
+    <a href="HomePage.html" class="home-button">
+        <i class="bi bi-house"></i>
+    </a>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+            font-family: Arial, sans-serif;
+            color: #fff;
+            overflow: hidden;
+        }
+        .container {
+            background-color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 600px;
+            overflow-y: auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #555;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #777;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #444;
+            text-align: center;
+        }
+        th {
+            background-color: #222;
+        }
+        .details {
+            background-color: #444;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        .details h3 {
+            margin-bottom: 10px;
+        }
+        .home-button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #555;
+            color: #fff;
+            text-decoration: none;
+            font-size: 24px;
+            border-radius: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            width: 69px;
+            height: 69px;
+        }
+
+        .home-button:hover {
+            background-color: #777;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Controle de Gordura</h1>
+        <form id="gordura-form">
+            <label for="nome">Nome da Dupla:</label>
+            <input type="text" id="nome" required>
+
+            <label for="placa">Placa do Veículo:</label>
+            <input type="text" id="placa" required>
+
+            <label for="cabo">Tipo de Cabo:</label>
+            <select id="cabo" required>
+                <option value="20 pares">20 pares</option>
+                <option value="50 pares">50 pares</option>
+                <option value="100 pares">100 pares</option>
+                <option value="200 pares">200 pares</option>
+            </select>
+
+            <label for="quantidade">Quantidade de Gordura (em kg):</label>
+            <input type="number" id="quantidade" step="0.01" required>
+
+            <button type="submit">Registrar <i class="bi bi-pencil-square"></i></button>
+        </form>
+
+        <h2>Resumo de Gorduras</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome da Dupla</th>
+                    <th>Tipo de Cabo</th>
+                    <th>Total (kg)</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="resumo">
+                <!-- Os registros aparecerão aqui -->
+            </tbody>
+        </table>
+
+        <div class="details" id="details">
+            <h3>Detalhes</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Placa</th>
+                        <th>Quantidade (kg)</th>
+                    </tr>
+                </thead>
+                <tbody id="details-body">
+                    <!-- Detalhes aparecerão aqui -->
+                </tbody>
+            </table>
+            <label for="usar-quantidade">Usar Gordura (em kg):</label>
+            <input type="number" id="usar-quantidade" step="0.01">
+            <button id="usar-gordura">Confirmar Uso <i class="bi bi-check-circle"></i></button>
+            <button id="close-details">Fechar <i class="bi bi-x-circle"></i></button>
+        </div>
+
+        <button id="save-csv">Salvar CSV <i class="bi bi-cloud-download"></i> </button>
+        <button id="load-csv">Carregar CSV <i class="bi bi-cloud-arrow-up"></i></button>
+    </div>
+
+    <script>
+        const form = document.getElementById('gordura-form');
+        const resumo = document.getElementById('resumo');
+        const details = document.getElementById('details');
+        const detailsBody = document.getElementById('details-body');
+        const closeDetails = document.getElementById('close-details');
+        const usarGorduraBtn = document.getElementById('usar-gordura');
+        const usarQuantidadeInput = document.getElementById('usar-quantidade');
+        const saveCsvBtn = document.getElementById('save-csv');
+        const loadCsvBtn = document.getElementById('load-csv');
+
+        const registros = [];
+        let detalhesAtuais = [];
+
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const nome = document.getElementById('nome').value;
+            const placa = document.getElementById('placa').value;
+            const cabo = document.getElementById('cabo').value;
+            const quantidade = parseFloat(document.getElementById('quantidade').value);
+            const data = new Date().toLocaleDateString();
+
+            registros.push({ nome, placa, cabo, quantidade, data });
+
+            atualizarResumo();
+            form.reset();
+        });
+
+        function atualizarResumo() {
+            const agrupados = {};
+
+            registros.forEach(registro => {
+                const chave = `${registro.nome}-${registro.cabo}`;
+                if (!agrupados[chave]) {
+                    agrupados[chave] = { nome: registro.nome, cabo: registro.cabo, total: 0, detalhes: [] };
+                }
+                agrupados[chave].total += registro.quantidade;
+                agrupados[chave].detalhes.push(registro);
+            });
+
+            resumo.innerHTML = '';
+
+            Object.values(agrupados).forEach(grupo => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${grupo.nome}</td>
+                    <td>${grupo.cabo}</td>
+                    <td>${grupo.total.toFixed(2)}</td>
+                    <td><button onclick="mostrarDetalhes('${grupo.nome}', '${grupo.cabo}')">Exibir mais <i class="bi bi-search"></i></button></td>
+                `;
+                resumo.appendChild(row);
+            });
+        }
+
+        function mostrarDetalhes(nome, cabo) {
+            detalhesAtuais = registros.filter(r => r.nome === nome && r.cabo === cabo);
+
+            detailsBody.innerHTML = '';
+            detalhesAtuais.forEach(registro => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${registro.data}</td>
+                    <td>${registro.placa}</td>
+                    <td>${registro.quantidade.toFixed(2)}</td>
+                `;
+                detailsBody.appendChild(row);
+            });
+
+            details.style.display = 'block';
+        }
+
+        closeDetails.addEventListener('click', () => {
+            details.style.display = 'none';
+        });
+
+        usarGorduraBtn.addEventListener('click', () => {
+            const usarQuantidade = parseFloat(usarQuantidadeInput.value);
+
+            if (isNaN(usarQuantidade) || usarQuantidade <= 0) {
+                alert("Insira um valor válido para usar gordura!");
+                return;
+            }
+
+            const totalGordura = detalhesAtuais.reduce((acc, r) => acc + r.quantidade, 0);
+            if (usarQuantidade > totalGordura) {
+                alert("Valor excede a gordura disponível!");
+                return;
+            }
+
+            registros.push({
+                nome: detalhesAtuais[0].nome,
+                placa: "Uso de gordura",
+                cabo: detalhesAtuais[0].cabo,
+                quantidade: -usarQuantidade,
+                data: new Date().toLocaleDateString()
+            });
+
+            atualizarResumo();
+            mostrarDetalhes(detalhesAtuais[0].nome, detalhesAtuais[0].cabo);
+            usarQuantidadeInput.value = '';
+        });
+
+        saveCsvBtn.addEventListener('click', () => {
+            const csvContent = 'data:text/csv;charset=utf-8,' +
+                'Nome da Dupla,Placa,Tipo de Cabo,Quantidade (kg),Data\n' +
+                registros.map(r => `${r.nome},${r.placa},${r.cabo},${r.quantidade},${r.data}`).join('\n');
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'controle_de_gordura_18.11.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        loadCsvBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+
+            input.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+
+                reader.onload = () => {
+                    const lines = reader.result.split('\n').slice(1);
+                    lines.forEach(line => {
+                        const [nome, placa, cabo, quantidade, data] = line.split(',');
+                        if (nome && placa && cabo && quantidade && data) {
+                            registros.push({
+                                nome: nome.trim(),
+                                placa: placa.trim(),
+                                cabo: cabo.trim(),
+                                quantidade: parseFloat(quantidade.trim()),
+                                data: data.trim()
+                            });
+                        }
+                    });
+                    atualizarResumo();
+                };
+
+                reader.readAsText(file);
+            });
+
+            input.click();
+        });
+    </script>
+</body>
+</html>

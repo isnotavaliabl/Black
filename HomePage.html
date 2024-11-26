@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guias com Animação de Fundo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #111;
+            font-family: Arial, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            z-index: 2;
+            position: relative;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card .description {
+            overflow-wrap: break-word;
+        }
+        .card {
+            background-color: rgba(34, 34, 34, 0.9);
+            width: 250px;
+            height: 200px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+        .card:hover {
+            transform: scale(1.05);
+            background-color: rgba(85, 85, 85, 0.9);
+        }
+        .card .title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .card .description {
+            font-size: 1em;
+            line-height: 1.4;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                padding: 15px;
+            }
+            .card {
+                width: 90%;
+                height: auto;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="constellation"></canvas>
+    <div class="container">
+        <div class="card">
+            <div class="title">Cálculo de Conversões</div>
+            <div class="description">Área de cálculos e conversões, ajudando em análises rápidas e precisas.</div>
+        </div>
+        <!-- Card para Controle de Gordura com link -->
+        <a href="controle_de_gordura.html">
+            <div class="card">
+                <div class="title">Controle de Gordura</div>
+                <div class="description">Pode visualizar e gerenciar os dados das gorduras de forma eficiente.</div>
+            </div>
+        </a>
+        <div class="card">
+            <div class="title">Relatórios Semanais</div>
+            <div class="description">Acesso detalhado aos cabos entregues e outras informações importantes.</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('constellation');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const stars = [];
+        const maxStars = 100;
+        const mouse = {
+            x: null,
+            y: null
+        };
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = event.x;
+            mouse.y = event.y;
+        });
+
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 2 + 1;
+                this.velocityX = Math.random() * 0.5 - 0.25;
+                this.velocityY = Math.random() * 0.5 - 0.25;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+            }
+            update() {
+                if (this.x > canvas.width || this.x < 0) this.velocityX = -this.velocityX;
+                if (this.y > canvas.height || this.y < 0) this.velocityY = -this.velocityY;
+
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+
+                const distance = Math.sqrt((mouse.x - this.x) ** 2 + (mouse.y - this.y) ** 2);
+                if (distance < 100) {
+                    this.x -= (mouse.x - this.x) / 20;
+                    this.y -= (mouse.y - this.y) / 20;
+                }
+
+                this.draw();
+            }
+        }
+
+        function createStars() {
+            for (let i = 0; i < maxStars; i++) {
+                stars.push(new Star());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                star.update();
+            });
+            connectStars();
+            requestAnimationFrame(animate);
+        }
+
+        function connectStars() {
+            for (let i = 0; i < maxStars; i++) {
+                for (let j = i; j < maxStars; j++) {
+                    const dx = stars[i].x - stars[j].x;
+                    const dy = stars[i].y - stars[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(stars[i].x, stars[i].y);
+                        ctx.lineTo(stars[j].x, stars[j].y);
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        createStars();
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            stars.length = 0;
+            createStars();
+        });
+    </script>
+</body>
+</html>
